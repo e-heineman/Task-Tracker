@@ -1,34 +1,105 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom'
+import About from './components/About';
 import Header from './components/Header';
+import Footer from './components/Footer';
 import Tasks from './components/Tasks';
+import AddTask from './components/AddTask';
 
 const App = () => {
-  const [tasks, setTasks] = useState([
-    {
-        id: 1,
-        text: 'Doctors Appointment',
-        day: 'Feb 5th at 2:30 PM',
-        reminder: true,
-    },
-    {
-        id: 2,
-        text: 'Meeting at School',
-        day: 'Feb 6th at 1:30 PM',
-        reminder: true,
-    },
-    {
-        id: 3,
-        text: 'Food Shopping',
-        day: 'Feb 5th at 2:30 PM',
-        reminder: false,
+  const [showAddTask, setShowAddTask] = useState(false)
+  const [tasks, setTasks] = useState([])
+
+  // Display tasks on page load
+  useEffect(() => {
+    const getTasks = async () => {
+      const tasksFromServer = await fetchTasks()
+      setTasks(tasksFromServer)
     }
-  ])
+
+    getTasks()
+  }, [])
+
+  // Fetch JSON object of current tasks
+  const fetchTasks = async () => {
+    const res = await fetch('http://localhost:5000/tasks')
+    const data = await res.json()
+    return data;
+  }
+  
+  const fetchTask = async (id) => {
+    const res = await fetch(`http://localhost:5000/tasks/${id}`)
+    const data = await res.json()
+    return data;
+  }
+
+  // Add a new task
+  const addTask = async (task) => {
+    const res = await fetch('http://localhost:5000/tasks', {
+      method: 'POST',
+      headers: {
+        'Content-type': 'application/json'
+      },
+      body: JSON.stringify(task)
+    })
+
+    const data = await res.json()
+
+    setTasks([...tasks, data])
+  }
+
+  // Delete a task
+  const deleteTask = async (id) => {
+    await fetch(`http://localhost:5000/tasks/${id}`, {
+      method: 'DELETE'
+    })
+
+    setTasks(tasks.filter((task) => task.id !== id));
+  }
+
+  // Toggle the reminder status on a task
+  const toggleReminder = async (id) => {
+    const taskToToggle = await fetchTask(id)
+    const updatedTask = {...taskToToggle, reminder: !taskToToggle.reminder}
+
+    const res = await fetch(`http://localhost:5000/tasks/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-type': 'application/json'
+      },
+      body: JSON.stringify(updatedTask)
+    })
+
+    const data = await res.json()
+
+    setTasks(
+      tasks.map((task) => task.id === id ? { ...task, reminder: data.reminder } : task)
+    )
+  }
 
   return (
+    <Router>
     <div className="container">
-      <Header />
-      <Tasks tasks={tasks}/>
+      <Header onAddTask={() => setShowAddTask(!showAddTask)} showAddTask={showAddTask}/>
+      <Routes>
+        <Route path='/' exact element={
+            <>
+              {showAddTask && <AddTask onAdd={addTask}/>}
+              {tasks.length > 0 ? (
+                <Tasks
+                  tasks={tasks}
+                  onDelete={deleteTask}
+                  onToggle={toggleReminder}/>
+              ) : (
+                  'No Tasks To Show'
+              )}
+            </>
+        }/>
+        <Route path='/about' element={<About />} />
+      </Routes>
+      <Footer />
     </div>
+    </Router>
   );
 }
 

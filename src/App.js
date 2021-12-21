@@ -22,15 +22,13 @@ const App = () => {
 
   // Fetch JSON object of current tasks
   const fetchTasks = async () => {
-    const res = await fetch('http://localhost:5000/tasks')
-    const data = await res.json()
-    return data;
+    const res = await fetch('http://localhost:8081/tasks');
+    return await res.json();
   }
   
   const fetchTask = async (id) => {
-    const res = await fetch(`http://localhost:5000/tasks/${id}`)
-    const data = await res.json()
-    return data;
+    const res = await fetch(`http://localhost:8081/tasks/${id}`)
+    return await res.json()
   }
 
   // Add a new task
@@ -50,7 +48,7 @@ const App = () => {
 
   // Delete a task
   const deleteTask = async (id) => {
-    await fetch(`http://localhost:5000/tasks/${id}`, {
+    await fetch(`http://localhost:8081/tasks/${id}`, {
       method: 'DELETE'
     })
 
@@ -62,7 +60,7 @@ const App = () => {
     const taskToToggle = await fetchTask(id)
     const updatedTask = {...taskToToggle, reminder: !taskToToggle.reminder}
 
-    const res = await fetch(`http://localhost:5000/tasks/${id}`, {
+    const res = await fetch(`http://localhost:8081/tasks/${id}`, {
       method: 'PUT',
       headers: {
         'Content-type': 'application/json'
